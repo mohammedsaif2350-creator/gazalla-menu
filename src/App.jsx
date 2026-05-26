@@ -1,202 +1,165 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 // ============================================================
-// بيانات مطعم غزالة
+// بيانات المطعم - يمكن تعديلها من لوحة التحكم
 // ============================================================
-const CONFIG = {
+const RESTAURANT_CONFIG = {
   name: "غزالة",
-  slogan: "ابدأ نهارك مع غزالة",
+  slogan: "ابدأ نهارك مع غزالة 🦌",
   whatsapp: "966551804564",
-  instagram: "gazallah2023",
+  logo: "🦌",
   currency: "ريال",
 };
 
-const DRINKS_COLD = [
-  { id: "dc1", name: "مـاء", price: 1, emoji: "💧" },
-  { id: "dc2", name: "مشروب غازي", price: 2, emoji: "🥤" },
-  { id: "dc3", name: "عصير ربيع", price: 2, emoji: "🧃" },
-  { id: "dc4", name: "عصير طازج", price: 10, emoji: "🍊" },
-  { id: "dc5", name: "عصير مركز", price: 5, emoji: "🍹" },
-];
-
-const DRINKS_HOT = [
-  { id: "dh1", name: "شاي", price: 2, emoji: "☕" },
-  { id: "dh2", name: "شاي كرك", price: 3, emoji: "☕" },
-  { id: "dh3", name: "شاي حليب/زنجبيل", price: 3, emoji: "☕" },
-  { id: "dh4", name: "شاي أخضر", price: 2, emoji: "🍵" },
-  { id: "dh5", name: "نسكافية", price: 3, emoji: "☕" },
-  { id: "dh6", name: "حافظة كرك", price: 28, emoji: "🫖" },
-  { id: "dh7", name: "حافظة شاي", price: 22, emoji: "🫖" },
-];
-
-const ALL_DRINKS = [...DRINKS_COLD, ...DRINKS_HOT];
-
-const CATEGORIES = [
-  {
-    id: "shawarma", name: "شاورما / برقر", emoji: "🌯", color: "#8B1A1A",
-    items: [
-      { id: "sw1", name: "شاورما صاروخ", price: 11, emoji: "🌯", popular: true },
-      { id: "sw2", name: "شاورما صغير", price: 6, emoji: "🌯" },
-      { id: "sw3", name: "شاورما عربي", price: 18, emoji: "🌯", popular: true },
-      { id: "sw4", name: "صحن مسحب", price: 17, emoji: "🍽️" },
-      { id: "sw5", name: "ساندوتش مسحب", price: 10, emoji: "🥪" },
-      { id: "sw6", name: "ساندوتش زنجر", price: 12, emoji: "🥪" },
-      { id: "sw7", name: "برقر دجاج", price: 12, emoji: "🍔", popular: true },
-      { id: "sw8", name: "برقر لحم مدخن", price: 15, emoji: "🍔" },
-      { id: "sw9", name: "صحن بطاطس", price: 6, emoji: "🍟" },
-    ],
+const INITIAL_MENU = {
+  // شباتي / صامولي
+  shabatySamoli: [
+    { id: "ss1", name: "دجاج", basePrice: 6, emoji: "🍗", popular: true, category: "شباتي / صامولي" },
+    { id: "ss2", name: "كبده", basePrice: 6, emoji: "🔥", popular: false, category: "شباتي / صامولي" },
+    { id: "ss3", name: "لحم مفروم", basePrice: 6, emoji: "🥩", popular: false, category: "شباتي / صامولي" },
+    { id: "ss4", name: "تونه", basePrice: 5, emoji: "🐟", popular: false, category: "شباتي / صامولي" },
+    { id: "ss5", name: "شكشوكه", basePrice: 4, emoji: "🍳", popular: false, category: "شباتي / صامولي" },
+    { id: "ss6", name: "بيض جبنة", basePrice: 4, emoji: "🍳", popular: false, category: "شباتي / صامولي" },
+    { id: "ss7", name: "مقلي - مسلوق ساده", basePrice: 3, emoji: "🍳", popular: false, category: "شباتي / صامولي" },
+    { id: "ss8", name: "جبنة سائل", basePrice: 3, emoji: "🧀", popular: false, category: "شباتي / صامولي" },
+    { id: "ss9", name: "جبنة مربى", basePrice: 5, emoji: "🧀", popular: false, category: "شباتي / صامولي" },
+    { id: "ss10", name: "مشكل طعمية", basePrice: 5, emoji: "🧆", popular: false, category: "شباتي / صامولي" },
+    { id: "ss11", name: "طعمية ساده", basePrice: 4, emoji: "🧆", popular: false, category: "شباتي / صامولي" },
+    { id: "ss12", name: "شباتي ساده", basePrice: 2, emoji: "🫓", popular: false, category: "شباتي / صامولي" },
+  ],
+  // شباتي / حالي
+  shabatyHali: [
+    { id: "sh1", name: "شباتي لبنه", basePrice: 4, emoji: "🫙", popular: true, category: "شباتي / حالي" },
+    { id: "sh2", name: "شباتي لبنه عسل", basePrice: 5, emoji: "🍯", popular: false, category: "شباتي / حالي" },
+    { id: "sh3", name: "شباتي لبنه زعتر", basePrice: 5, emoji: "🌿", popular: false, category: "شباتي / حالي" },
+    { id: "sh4", name: "شباتي نوتيلا", basePrice: 5, emoji: "🍫", popular: true, category: "شباتي / حالي" },
+    { id: "sh5", name: "شباتي فول سوداني", basePrice: 5, emoji: "🥜", popular: false, category: "شباتي / حالي" },
+    { id: "sh6", name: "شباتي لوتس", basePrice: 6, emoji: "🍪", popular: false, category: "شباتي / حالي" },
+    { id: "sh7", name: "شباتي طحينة", basePrice: 4, emoji: "🫙", popular: false, category: "شباتي / حالي" },
+    { id: "sh8", name: "شباتي طحينة جبنة", basePrice: 5, emoji: "🧀", popular: false, category: "شباتي / حالي" },
+    { id: "sh9", name: "شباتي جبنة عسل", basePrice: 5, emoji: "🍯", popular: false, category: "شباتي / حالي" },
+  ],
+  // شاورما / برقر
+  shawarma: [
+    { id: "sw1", name: "شاورما صاروخ", basePrice: 11, emoji: "🌯", popular: true, category: "شاورما / برقر" },
+    { id: "sw2", name: "شاورما صغير", basePrice: 6, emoji: "🌯", popular: false, category: "شاورما / برقر" },
+    { id: "sw3", name: "شاورما عربي", basePrice: 18, emoji: "🌯", popular: false, category: "شاورما / برقر" },
+    { id: "sw4", name: "صحن مسحب", basePrice: 17, emoji: "🍽️", popular: false, category: "شاورما / برقر" },
+    { id: "sw5", name: "ساندوتش مسحب", basePrice: 10, emoji: "🥙", popular: false, category: "شاورما / برقر" },
+    { id: "sw6", name: "ساندوتش زنجر", basePrice: 12, emoji: "🥙", popular: false, category: "شاورما / برقر" },
+    { id: "sw7", name: "برقر دجاج", basePrice: 12, emoji: "🍔", popular: true, category: "شاورما / برقر" },
+    { id: "sw8", name: "برقر لحم مدخن", basePrice: 15, emoji: "🍔", popular: false, category: "شاورما / برقر" },
+    { id: "sw9", name: "صحن بطاطس", basePrice: 6, emoji: "🍟", popular: false, category: "شاورما / برقر" },
+  ],
+  // صحون
+  soHon: [
+    { id: "so1", name: "صحن كبده", basePrice: 12, emoji: "🍽️", popular: false, category: "صحون" },
+    { id: "so2", name: "صحن دجاج", basePrice: 12, emoji: "🍽️", popular: false, category: "صحون" },
+    { id: "so3", name: "صحن تونه", basePrice: 10, emoji: "🐟", popular: false, category: "صحون" },
+    { id: "so4", name: "صحن شكشوكه", basePrice: 8, emoji: "🍳", popular: false, category: "صحون" },
+    { id: "so5", name: "صحن قلابة - عدس", basePrice: 6, emoji: "🫘", popular: false, category: "صحون" },
+    { id: "so6", name: "صحن تونة بازيلاء", basePrice: 10, emoji: "🐟", popular: false, category: "صحون" },
+  ],
+  // بوكسات غزالة
+  boxes: [
+    { id: "bx1", name: "بوكس ساندوتش مشكل", basePrice: 28, emoji: "📦", popular: false, category: "بوكسات غزالة" },
+    { id: "bx2", name: "بوكس نواشف", basePrice: 28, emoji: "📦", popular: false, category: "بوكسات غزالة" },
+    { id: "bx3", name: "بوكس ساندوتش حالي", basePrice: 28, emoji: "📦", popular: false, category: "بوكسات غزالة" },
+    { id: "bx4", name: "بوكس شاورما غزالة", basePrice: 37, emoji: "📦", popular: true, category: "بوكسات غزالة" },
+  ],
+  extras: [
+    { id: "e1", label: "شيبس عمان", priceAdd: 1, emoji: "🥔" },
+    { id: "e2", label: "جبنه", priceAdd: 1, emoji: "🧀" },
+    { id: "e3", label: "بيض دبل", priceAdd: 1, emoji: "🍳" },
+    { id: "e4", label: "علبة ثوم", priceAdd: 2, emoji: "🧄" },
+    { id: "e5", label: "علبة كاتشاب", priceAdd: 2, emoji: "🍅" },
+  ],
+  removals: [
+    { id: "r1", label: "بدون بصل" },
+    { id: "r2", label: "بدون طماطم" },
+    { id: "r3", label: "بدون مخلل" },
+    { id: "r4", label: "بدون صوص" },
+    { id: "r5", label: "بدون خس" },
+    { id: "r6", label: "بدون فلفل" },
+  ],
+  spice: [
+    { id: "sp1", label: "عادي", emoji: "😊" },
+    { id: "sp2", label: "حار قليلاً", emoji: "🌶️" },
+    { id: "sp3", label: "حار جداً", emoji: "🔥" },
+  ],
+  // مشروبات باردة
+  coldDrinks: [
+    { id: "cd1", name: "مـــاء", price: 1, emoji: "💧" },
+    { id: "cd2", name: "مشروب غازي", price: 2, emoji: "🥤" },
+    { id: "cd3", name: "عصير ربيع", price: 2, emoji: "🧃" },
+    { id: "cd4", name: "عصير طازج", price: 10, emoji: "🍊" },
+    { id: "cd5", name: "عصير مركز", price: 5, emoji: "🍹" },
+  ],
+  // مشروبات ساخنة
+  hotDrinks: [
+    { id: "hd1", name: "شـــاي", price: 2, emoji: "☕" },
+    { id: "hd2", name: "شاي كرك", price: 3, emoji: "☕" },
+    { id: "hd3", name: "شاي حليب / زنجبيل", price: 3, emoji: "☕" },
+    { id: "hd4", name: "شاي أخضر", price: 2, emoji: "🍵" },
+    { id: "hd5", name: "نسكافيه", price: 3, emoji: "☕" },
+    { id: "hd6", name: "حافظة كرك", price: 25, emoji: "🫖" },
+    { id: "hd7", name: "حافظة شاي", price: 22, emoji: "🫖" },
+  ],
+  // جمع كل المشروبات للاختيار
+  get drinks() {
+    return [...this.coldDrinks, ...this.hotDrinks];
   },
-  {
-    id: "shbati_s", name: "شباتي / صامولي", emoji: "🫓", color: "#5D4037",
-    items: [
-      { id: "bs1", name: "شباتي دجاج", price: 6, emoji: "🫓", popular: true },
-      { id: "bs2", name: "شباتي كبده", price: 6, emoji: "🫓" },
-      { id: "bs3", name: "شباتي لحم مفروم", price: 6, emoji: "🫓" },
-      { id: "bs4", name: "شباتي تونه", price: 5, emoji: "🫓" },
-      { id: "bs5", name: "شباتي شكشوكه", price: 4, emoji: "🫓" },
-      { id: "bs6", name: "شباتي بيض جبنة", price: 4, emoji: "🫓" },
-      { id: "bs7", name: "مقلي / مسلوق ساده", price: 3, emoji: "🫓" },
-      { id: "bs8", name: "جبنه سائل", price: 3, emoji: "🫓" },
-      { id: "bs9", name: "جبنه مربى", price: 5, emoji: "🫓" },
-      { id: "bs10", name: "مشكل طعمية", price: 5, emoji: "🫓" },
-      { id: "bs11", name: "طعمية ساده", price: 4, emoji: "🫓" },
-      { id: "bs12", name: "شباتي ساده", price: 2, emoji: "🫓" },
-    ],
+  // جمع كل الأصناف للقائمة
+  get sandwiches() {
+    return [...this.shabatySamoli, ...this.shabatyHali, ...this.shawarma, ...this.soHon, ...this.boxes];
   },
-  {
-    id: "shbati_h", name: "شباتي / حالي", emoji: "🍯", color: "#6D4C1F",
-    items: [
-      { id: "bh1", name: "شباتي لبنه", price: 4, emoji: "🍯" },
-      { id: "bh2", name: "شباتي لبنه عسل", price: 5, emoji: "🍯", popular: true },
-      { id: "bh3", name: "شباتي لبنه زعتر", price: 5, emoji: "🍯" },
-      { id: "bh4", name: "شباتي نوتيلا", price: 5, emoji: "🍫", popular: true },
-      { id: "bh5", name: "شباتي فول سوداني", price: 5, emoji: "🥜" },
-      { id: "bh6", name: "شباتي لوتس", price: 6, emoji: "🍪", popular: true },
-      { id: "bh7", name: "شباتي طحينة", price: 4, emoji: "🍯" },
-      { id: "bh8", name: "شباتي طحينة جبنة", price: 5, emoji: "🍯" },
-      { id: "bh9", name: "شباتي جبنة عسل", price: 5, emoji: "🍯" },
-      { id: "bh10", name: "شباتي جلد امرو", price: 6, emoji: "🍬" },
-    ],
-  },
-  {
-    id: "sohon", name: "صحون", emoji: "🍽️", color: "#1A3A1A",
-    items: [
-      { id: "so1", name: "صحن كبده", price: 12, emoji: "🍽️" },
-      { id: "so2", name: "صحن دجاج", price: 12, emoji: "🍽️", popular: true },
-      { id: "so3", name: "صحن تونه", price: 10, emoji: "🍽️" },
-      { id: "so4", name: "صحن شكشوكه", price: 8, emoji: "🍳" },
-      { id: "so5", name: "صحن قلابة/عدس", price: 6, emoji: "🍽️" },
-      { id: "so6", name: "صحن تونة بازيلاء", price: 10, emoji: "🍽️" },
-    ],
-  },
-  {
-    id: "boxes", name: "بوكسات غزالة", emoji: "📦", color: "#4A235A",
-    items: [
-      { id: "bx1", name: "بوكس ساندوتش مشكل", price: 28, emoji: "📦", popular: true },
-      { id: "bx2", name: "بوكس نواشف", price: 28, emoji: "📦" },
-      { id: "bx3", name: "بوكس ساندوتش حالي", price: 28, emoji: "📦" },
-      { id: "bx4", name: "بوكس شاورما غزالة", price: 37, emoji: "📦", popular: true },
-    ],
-  },
-];
-
-const EXTRAS = [
-  { id: "ex1", label: "شيبس عمان", priceAdd: 1, emoji: "🥔" },
-  { id: "ex2", label: "جبنه", priceAdd: 1, emoji: "🧀" },
-  { id: "ex3", label: "بيض دبل", priceAdd: 1, emoji: "🍳" },
-  { id: "ex4", label: "علبة ثوم", priceAdd: 2, emoji: "🧄" },
-  { id: "ex5", label: "علبة كاتشاب", priceAdd: 2, emoji: "🍅" },
-];
-
-const SPICE = [
-  { id: "sp1", label: "عادي", emoji: "😊" },
-  { id: "sp2", label: "حار قليلاً", emoji: "🌶️" },
-  { id: "sp3", label: "حار جداً", emoji: "🔥" },
-];
-
-const REMOVALS = [
-  { id: "r1", label: "بدون بصل" },
-  { id: "r2", label: "بدون طماطم" },
-  { id: "r3", label: "بدون مخلل" },
-  { id: "r4", label: "بدون صوص" },
-  { id: "r5", label: "بدون خس" },
-  { id: "r6", label: "بدون فلفل" },
-];
-
-// حساب سعر العنصر
-const calcItemTotal = (item) => {
-  if (item.isDrink) return item.price * item.qty;
-  const extrasSum = (item.extras || []).reduce((s, eid) => {
-    return s + (EXTRAS.find(e => e.id === eid)?.priceAdd || 0);
-  }, 0);
-  const drinkPrice = item.drink ? (ALL_DRINKS.find(d => d.id === item.drink)?.price || 0) : 0;
-  return (item.price + extrasSum + drinkPrice) * item.qty;
 };
 
-let orderSeq = 1050 + Math.floor(Math.random() * 50);
+// ============================================================
+// مساعدات
+// ============================================================
+let orderCounter = Math.floor(1000 + Math.random() * 9000);
 
-// ============================================================
-// اللوغو SVG
-// ============================================================
-const GazalaLogo = ({ size = 48 }) => (
-  <svg width={size} height={size} viewBox="0 0 100 100">
-    <circle cx="50" cy="50" r="48" fill="#1a1a2e" stroke="#D4A017" strokeWidth="2.5"/>
-    <ellipse cx="56" cy="53" rx="19" ry="10" fill="#C0392B" transform="rotate(-15 56 53)"/>
-    <circle cx="38" cy="44" r="8" fill="#C0392B"/>
-    <line x1="46" y1="42" x2="56" y2="46" stroke="#C0392B" strokeWidth="4" strokeLinecap="round"/>
-    <line x1="66" y1="51" x2="73" y2="44" stroke="#C0392B" strokeWidth="3" strokeLinecap="round"/>
-    <line x1="73" y1="44" x2="75" y2="37" stroke="#C0392B" strokeWidth="2.5" strokeLinecap="round"/>
-    <line x1="46" y1="59" x2="43" y2="70" stroke="#C0392B" strokeWidth="3" strokeLinecap="round"/>
-    <line x1="53" y1="61" x2="51" y2="71" stroke="#C0392B" strokeWidth="3" strokeLinecap="round"/>
-    <line x1="64" y1="59" x2="63" y2="69" stroke="#C0392B" strokeWidth="3" strokeLinecap="round"/>
-    <line x1="70" y1="56" x2="71" y2="66" stroke="#C0392B" strokeWidth="3" strokeLinecap="round"/>
-    <circle cx="25" cy="63" r="5" fill="#D4A017"/>
-    <circle cx="76" cy="31" r="4" fill="#D4A017"/>
-  </svg>
-);
-
-// ============================================================
-// Chip مكون زر الاختيار
-// ============================================================
-const Chip = ({ label, active, onClick, color = "#C0392B" }) => (
-  <button onClick={onClick} style={{
-    padding: "8px 14px", borderRadius: 20, cursor: "pointer", transition: "all 0.15s",
-    border: `1.5px solid ${active ? color : "rgba(255,255,255,0.15)"}`,
-    background: active ? color : "rgba(255,255,255,0.05)",
-    color: active ? "#fff" : "#bbb",
-    fontFamily: "'Cairo', sans-serif", fontSize: 12, fontWeight: active ? 700 : 400,
-    whiteSpace: "nowrap", WebkitTapHighlightColor: "transparent",
-  }}>{label}</button>
-);
+const calcItemTotal = (item, menuData) => {
+  const m = menuData || INITIAL_MENU;
+  const extrasAdd = (item.extras || []).reduce((sum, eid) => {
+    return sum + (m.extras.find((e) => e.id === eid)?.priceAdd || 0);
+  }, 0);
+  const drinkAdd = item.drink ? (m.drinks.find((d) => d.id === item.drink)?.price || 0) : 0;
+  return (item.basePrice + extrasAdd + drinkAdd) * item.qty;
+};
 
 // ============================================================
 // المكون الرئيسي
 // ============================================================
 export default function App() {
-  const [page, setPage] = useState("menu");
-  const [activeCat, setActiveCat] = useState("shawarma");
+  const [page, setPage] = useState("menu"); // menu | customize | cart | admin
+  const [menu, setMenu] = useState(INITIAL_MENU);
+  const [config, setConfig] = useState(RESTAURANT_CONFIG);
   const [cart, setCart] = useState([]);
-  const [customItem, setCustomItem] = useState(null); 
-  const [notification, setNotification] = useState(null);
+  const [selectedSandwich, setSelectedSandwich] = useState(null);
+  const [customizing, setCustomizing] = useState(null);
   const [orderSent, setOrderSent] = useState(false);
-  const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [adminPass, setAdminPass] = useState("");
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [notification, setNotification] = useState(null);
 
-  const cartTotal = cart.reduce((s, i) => s + calcItemTotal(i), 0);
-
+  // إظهار إشعار
   const notify = (msg, type = "success") => {
     setNotification({ msg, type });
-    setTimeout(() => setNotification(null), 2200);
+    setTimeout(() => setNotification(null), 2500);
   };
 
-  const openCustomize = (item, catColor) => {
-    setCustomItem({
-      cartId: Date.now(),
-      name: item.name,
-      price: item.price,
-      emoji: item.emoji,
-      catColor: catColor || "#8B1A1A",
-      isDrink: false,
+  // فتح تخصيص سندوتش
+  const openCustomize = (sandwich) => {
+    setSelectedSandwich(sandwich);
+    setCustomizing({
+      sandwichId: sandwich.id,
+      sandwichName: sandwich.name,
+      basePrice: sandwich.basePrice,
+      emoji: sandwich.emoji,
+      size: "sm",
+      bread: "b1",
       extras: [],
       removals: [],
       spice: "sp1",
@@ -207,467 +170,599 @@ export default function App() {
     setPage("customize");
   };
 
-  const openDrinkOrder = (drink) => {
-    setCustomItem({
-      cartId: Date.now(),
-      name: drink.name,
-      price: drink.price,
-      emoji: drink.emoji,
-      isDrink: true,
-      qty: 1,
-    });
-    setPage("drink_order");
-  };
-
-  const addToCart = (item) => {
-    setCart(prev => [...prev, item]);
-    notify("✅ أُضيف للسلة!");
+  // إضافة للسلة - تاخد البيانات مباشرة عشان ما تقرأ state قديم
+  const addToCart = (itemData) => {
+    const item = { ...itemData, id: Date.now() };
+    setCart((prev) => [...prev, item]);
+    notify("✅ تمت الإضافة للسلة");
     setPage("menu");
   };
 
-  const removeFromCart = (cartId) => setCart(prev => prev.filter(i => i.cartId !== cartId));
-  const changeQty = (cartId, delta) =>
-    setCart(prev => prev.map(i => i.cartId === cartId ? { ...i, qty: Math.max(1, i.qty + delta) } : i));
+  // فتح تخصيص مشروب منفرد
+  const openDrinkOrder = (drink) => {
+    setCustomizing({
+      sandwichId: drink.id,
+      sandwichName: drink.name,
+      basePrice: drink.price,
+      emoji: drink.emoji,
+      extras: [],
+      removals: [],
+      spice: "sp1",
+      drink: null,
+      qty: 1,
+      notes: "",
+      isDrink: true,
+    });
+    setPage("customize");
+  };
 
+  // حذف من السلة
+  const removeFromCart = (id) => setCart((prev) => prev.filter((i) => i.id !== id));
+
+  // تغيير الكمية
+  const changeQty = (id, delta) => {
+    setCart((prev) =>
+      prev
+        .map((i) => (i.id === id ? { ...i, qty: i.qty + delta } : i))
+        .filter((i) => i.qty > 0)
+    );
+  };
+
+  // الإجمالي
+  const total = cart.reduce((sum, i) => sum + calcItemTotal(i, menu), 0);
+
+  // إرسال واتساب
   const sendOrder = () => {
-    orderSeq++;
+    orderCounter++;
     const now = new Date();
-    const time = now.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
-    let msg = `🦌 *طلب من مطعم غزالة*\n━━━━━━━━━━━━━━━\n`;
-    msg += `📋 رقم الطلب: *#${orderSeq}*\n⏰ الوقت: *${time}*\n━━━━━━━━━━━━━━━\n\n`;
-    cart.forEach((item, i) => {
-      msg += `${i + 1}️⃣ *${item.name}* × ${item.qty}\n`;
+    const timeStr = now.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
+    let msg = `🍽️ *طلب جديد من ${config.name}*\n`;
+    msg += `━━━━━━━━━━━━━━━━━\n`;
+    msg += `📋 *رقم الطلب:* #${orderCounter}\n`;
+    msg += `⏰ *وقت الطلب:* ${timeStr}\n`;
+    msg += `━━━━━━━━━━━━━━━━━\n\n`;
+    cart.forEach((item, idx) => {
+      msg += `${idx + 1}️⃣ *${item.sandwichName}* × ${item.qty}\n`;
       if (!item.isDrink) {
-        const spiceLabel = SPICE.find(s => s.id === item.spice)?.label || "";
-        msg += `   🌶️ ${spiceLabel}\n`;
-        if (item.extras?.length > 0) {
-          msg += `   ➕ ${item.extras.map(eid => EXTRAS.find(e => e.id === eid)?.label).join("، ")}\n`;
+        const spiceLabel = menu.spice.find((s) => s.id === item.spice)?.label;
+        if (spiceLabel) msg += `   🌶️ الحدة: ${spiceLabel}\n`;
+        if (item.extras && item.extras.length > 0) {
+          const extraLabels = item.extras.map((eid) => menu.extras.find((e) => e.id === eid)?.label).filter(Boolean).join('، ');
+          if (extraLabels) msg += `   ➕ إضافات: ${extraLabels}\n`;
         }
-        if (item.removals?.length > 0) {
-          msg += `   ➖ ${item.removals.map(rid => REMOVALS.find(r => r.id === rid)?.label).join("، ")}\n`;
+        if (item.removals && item.removals.length > 0) {
+          const remLabels = item.removals.map((rid) => menu.removals.find((r) => r.id === rid)?.label).filter(Boolean).join('، ');
+          if (remLabels) msg += `   ➖ محذوفات: ${remLabels}\n`;
         }
         if (item.drink) {
-          const d = ALL_DRINKS.find(d => d.id === item.drink);
-          msg += `   🥤 مشروب: ${d?.name}\n`;
+          const drinkName = menu.drinks.find((d) => d.id === item.drink)?.name;
+          if (drinkName) msg += `   🥤 مشروب: ${drinkName}\n`;
         }
-        if (item.notes) msg += `   📝 ${item.notes}\n`;
       }
-      msg += `   💰 ${calcItemTotal(item)} ${CONFIG.currency}\n\n`;
+      if (item.notes) msg += `   📝 ملاحظات: ${item.notes}\n`;
+      msg += `   💰 السعر: ${calcItemTotal(item, menu)} ${config.currency}\n\n`;
     });
-    msg += `━━━━━━━━━━━━━━━\n💵 *الإجمالي: ${cartTotal} ${CONFIG.currency}*\n━━━━━━━━━━━━━━━\n_شكراً لطلبك من غزالة_ 🦌`;
-    window.open(`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`, "_blank");
+    msg += `━━━━━━━━━━━━━━━━━\n`;
+    msg += `💵 *الإجمالي: ${total} ${config.currency}*\n`;
+    msg += `━━━━━━━━━━━━━━━━━`;
+    const url = `https://wa.me/${config.whatsapp}?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank");
     setOrderSent(true);
     setTimeout(() => { setOrderSent(false); setCart([]); setPage("menu"); }, 3000);
   };
 
-  if (page === "menu") {
-    const currentCat = CATEGORIES.find(c => c.id === activeCat);
-    const isColDrink = activeCat === "drinks_cold";
-    const isHotDrink = activeCat === "drinks_hot";
-    const currentDrinks = isColDrink ? DRINKS_COLD : isHotDrink ? DRINKS_HOT : null;
+  // ============================================================
+  // واجهات الصفحات
+  // ============================================================
 
-    return (
-      <div style={{ minHeight: "100vh", background: "#0f0f1a", direction: "rtl", fontFamily: "'Cairo', sans-serif" }}>
-        <GlobalStyle />
-
-        <div style={{
-          background: "linear-gradient(135deg,#1a1a2e,#16213e)",
-          padding: "18px 16px 14px",
-          borderBottom: "2px solid #D4A017",
-          position: "sticky", top: 0, zIndex: 50,
-          display: "flex", alignItems: "center", gap: 10,
-        }}>
-          <div onClick={() => setPage("admin")} style={{ cursor: "pointer", fontSize: 20, opacity: 0.5 }}>⚙️</div>
-          <div style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-              <GazalaLogo size={42} />
-              <div>
-                <div style={{ color: "#D4A017", fontSize: 22, fontWeight: 900 }}>غزالة</div>
-                <div style={{ color: "#888", fontSize: 11 }}>ابدأ نهارك مع غزالة 🦌</div>
-              </div>
-            </div>
-          </div>
-          {cart.length > 0
-            ? <button onClick={() => setPage("cart")} style={{ background: "#D4A017", border: "none", borderRadius: 20, padding: "8px 14px", color: "#0f0f1a", fontWeight: 900, fontFamily: "'Cairo',sans-serif", fontSize: 13, cursor: "pointer", boxShadow: "0 2px 10px rgba(212,160,23,.4)" }}>🛒 {cart.length}</button>
-            : <div style={{ width: 50 }} />}
-        </div>
-
-        <div style={{ overflowX: "auto", display: "flex", gap: 8, padding: "12px 16px 8px", background: "#0a0a15" }}>
-          {CATEGORIES.map(cat => (
-            <button key={cat.id} onClick={() => setActiveCat(cat.id)} style={{
-              flexShrink: 0, padding: "8px 14px", borderRadius: 20, cursor: "pointer",
-              border: activeCat === cat.id ? "2px solid #D4A017" : "2px solid rgba(255,255,255,0.1)",
-              background: activeCat === cat.id ? cat.color : "rgba(255,255,255,0.04)",
-              color: activeCat === cat.id ? "#FFD700" : "#999",
-              fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: activeCat === cat.id ? 800 : 400,
-              whiteSpace: "nowrap", transition: "all 0.2s",
-            }}>{cat.emoji} {cat.name}</button>
-          ))}
-          {["drinks_cold","drinks_hot"].map((dk, idx) => (
-            <button key={dk} onClick={() => setActiveCat(dk)} style={{
-              flexShrink: 0, padding: "8px 14px", borderRadius: 20, cursor: "pointer",
-              border: activeCat === dk ? "2px solid #D4A017" : "2px solid rgba(255,255,255,0.1)",
-              background: activeCat === dk ? "#0d3b2e" : "rgba(255,255,255,0.04)",
-              color: activeCat === dk ? "#FFD700" : "#999",
-              fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: activeCat === dk ? 800 : 400,
-              whiteSpace: "nowrap",
-            }}>{idx === 0 ? "🥤 باردة" : "☕ ساخنة"}</button>
-          ))}
-        </div>
-
-        <div style={{ padding: "10px 16px 130px" }}>
-          {currentCat && (
-            <>
-              <SectionTitle emoji={currentCat.emoji} title={currentCat.name} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {currentCat.items.map(item => (
-                  <ItemRow key={item.id} item={item} onPress={() => openCustomize(item, currentCat.color)} />
-                ))}
-              </div>
-            </>
-          )}
-
-          {currentDrinks && (
-            <>
-              <SectionTitle emoji={isColDrink ? "🥤" : "☕"} title={isColDrink ? "مشروبات باردة" : "مشروبات ساخنة"} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {currentDrinks.map(drink => (
-                  <div key={drink.id} onClick={() => openDrinkOrder(drink)} style={{
-                    background: "linear-gradient(135deg,#0d2010,#0f3020)",
-                    border: "1px solid rgba(212,160,23,0.2)", borderRadius: 14,
-                    padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
-                  }}>
-                    <span style={{ fontSize: 28 }}>{drink.emoji}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: "#ddd", fontSize: 15, fontWeight: 700 }}>{drink.name}</div>
-                    </div>
-                    <div style={{ textAlign: "left" }}>
-                      <div style={{ color: "#D4A017", fontSize: 16, fontWeight: 900 }}>{drink.price}</div>
-                      <div style={{ color: "#777", fontSize: 10 }}>{CONFIG.currency}</div>
-                    </div>
-                    <div style={{ background: "#0d3b2e", borderRadius: 10, padding: "6px 10px", color: "#90EE90", fontSize: 18, fontWeight: 900 }}>+</div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
+  // ---- صفحة القائمة ----
+  const MenuPage = () => (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #1a0a00 0%, #2d1200 50%, #1a0a00 100%)" }}>
+      {/* الهيدر */}
+      <div style={{
+        background: "linear-gradient(180deg, #8B0000 0%, #C0392B 100%)",
+        padding: "28px 20px 20px",
+        textAlign: "center",
+        position: "relative",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.5)"
+      }}>
+        <div style={{ fontSize: 52, marginBottom: 4 }}>{config.logo}</div>
+        <h1 style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 26, fontWeight: 900, margin: 0, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
+          {config.name}
+        </h1>
+        <p style={{ color: "#FFEAA7", fontFamily: "'Cairo', sans-serif", fontSize: 13, margin: "4px 0 0", opacity: 0.9 }}>
+          {config.slogan}
+        </p>
+        <button onClick={() => setPage("admin")} style={{
+          position: "absolute", top: 14, left: 14, background: "rgba(255,255,255,0.15)",
+          border: "none", borderRadius: 8, padding: "6px 10px", color: "#fff", fontSize: 11,
+          fontFamily: "'Cairo', sans-serif", cursor: "pointer"
+        }}>⚙️</button>
         {cart.length > 0 && (
-          <div style={{ position: "fixed", bottom: 20, left: 16, right: 16, zIndex: 100 }}>
-            <button onClick={() => setPage("cart")} style={{
-              width: "100%", background: "linear-gradient(135deg,#D4A017,#C0392B)",
-              border: "none", borderRadius: 16, padding: "15px 20px",
-              color: "#fff", fontFamily: "'Cairo',sans-serif", fontSize: 16, fontWeight: 900,
-              cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center",
-              boxShadow: "0 6px 24px rgba(212,160,23,.35)",
-            }}>
-              <span style={{ background: "rgba(255,255,255,.2)", borderRadius: 12, padding: "2px 10px" }}>{cart.length}</span>
-              <span>🛒 عرض السلة</span>
-              <span>{cartTotal} {CONFIG.currency}</span>
-            </button>
-          </div>
+          <button onClick={() => setPage("cart")} style={{
+            position: "absolute", top: 14, right: 14,
+            background: "#FFD700", border: "none", borderRadius: 20,
+            padding: "6px 14px", color: "#1a0a00", fontWeight: 800,
+            fontFamily: "'Cairo', sans-serif", fontSize: 13, cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
+          }}>
+            🛒 {cart.length}
+          </button>
         )}
-        <Toast n={notification} />
       </div>
-    );
-  }
 
-  if (page === "customize" && customItem) {
-    return <CustomizePage initial={customItem} onBack={() => setPage("menu")} onAdd={addToCart} />;
-  }
-
-  if (page === "drink_order" && customItem) {
-    return <DrinkOrderPage initial={customItem} onBack={() => setPage("menu")} onAdd={addToCart} />;
-  }
-
-  if (page === "cart") {
-    return (
-      <div style={{ minHeight: "100vh", background: "#0f0f1a", direction: "rtl", paddingBottom: 120, fontFamily: "'Cairo',sans-serif" }}>
-        <GlobalStyle />
-        <div style={{ background: "linear-gradient(135deg,#1a1a2e,#16213e)", padding: "16px", borderBottom: "2px solid #D4A017", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10 }}>
-          <BackBtn onClick={() => setPage("menu")} />
-          <div style={{ flex: 1, textAlign: "right", color: "#D4A017", fontSize: 18, fontWeight: 900 }}>🛒 سلة طلباتك</div>
-          <GazalaLogo size={36} />
-        </div>
-
-        {cart.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "70px 20px" }}>
-            <div style={{ fontSize: 64, marginBottom: 16 }}>🛒</div>
-            <div style={{ color: "#555", fontSize: 16 }}>السلة فارغة!</div>
-            <button onClick={() => setPage("menu")} style={{ marginTop: 20, background: "#D4A017", border: "none", borderRadius: 14, padding: "12px 32px", color: "#0f0f1a", fontFamily: "'Cairo',sans-serif", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>🦌 ابدأ الطلب</button>
-          </div>
-        ) : (
-          <div style={{ padding: 16 }}>
-            {cart.map(item => {
-              const spiceLabel = !item.isDrink ? (SPICE.find(s => s.id === item.spice)?.label || "") : null;
-              const drinkObj = !item.isDrink && item.drink ? ALL_DRINKS.find(d => d.id === item.drink) : null;
-              const t = calcItemTotal(item);
-              return (
-                <div key={item.cartId} style={{ background: "linear-gradient(135deg,#1a1a2e,#16213e)", border: "1px solid rgba(212,160,23,.2)", borderRadius: 16, padding: 16, marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <button onClick={() => removeFromCart(item.cartId)} style={{ background: "rgba(192,57,43,.2)", border: "1px solid #C0392B", borderRadius: 8, padding: "4px 10px", color: "#E57373", cursor: "pointer", fontSize: 12, fontFamily: "'Cairo',sans-serif" }}>🗑️ حذف</button>
-                    <div style={{ color: "#eee", fontSize: 15, fontWeight: 800 }}>{item.emoji} {item.name}</div>
+      {/* القائمة بالتصنيفات */}
+      <div style={{ padding: "20px 16px" }}>
+        {[
+          { key: "shabatySamoli", title: "🫓 شباتي / صامولي", color: "#8B4513" },
+          { key: "shabatyHali", title: "🍯 شباتي / حالي", color: "#8B0045" },
+          { key: "shawarma", title: "🌯 شاورما / برقر غزالة", color: "#8B0000" },
+          { key: "soHon", title: "🍽️ صحون", color: "#1a3a1a" },
+          { key: "boxes", title: "📦 بوكسات غزالة", color: "#1a1a5a" },
+        ].map(({ key, title, color }) => (
+          <div key={key} style={{ marginBottom: 28 }}>
+            <h2 style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 17, fontWeight: 800, marginBottom: 12, textAlign: "right", background: `${color}88`, padding: "8px 14px", borderRadius: 10, borderRight: "4px solid #FFD700" }}>
+              {title}
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {(menu[key] || []).map((s) => (
+                <button key={s.id} onClick={() => openCustomize(s)} style={{
+                  background: "linear-gradient(135deg, #2d1a00, #3d2200)",
+                  border: "1px solid rgba(255,215,0,0.3)",
+                  borderRadius: 14, padding: "14px 10px", cursor: "pointer",
+                  textAlign: "center", position: "relative",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.4)"
+                }}
+                  onTouchStart={e => e.currentTarget.style.transform = "scale(0.96)"}
+                  onTouchEnd={e => e.currentTarget.style.transform = "scale(1)"}
+                >
+                  {s.popular && <span style={{
+                    position: "absolute", top: 6, right: 6, background: "#FFD700",
+                    color: "#1a0a00", fontSize: 8, fontWeight: 800, padding: "2px 5px",
+                    borderRadius: 6, fontFamily: "'Cairo', sans-serif"
+                  }}>⭐ الأكثر طلباً</span>}
+                  <div style={{ fontSize: 32, marginBottom: 4 }}>{s.emoji}</div>
+                  <div style={{ color: "#FFE4B5", fontFamily: "'Cairo', sans-serif", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{s.name}</div>
+                  <div style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 14, fontWeight: 900 }}>
+                    {s.basePrice} {config.currency}
                   </div>
-                  {!item.isDrink && (
-                    <div style={{ color: "#888", fontSize: 12, lineHeight: 2, textAlign: "right" }}>
-                      {spiceLabel && <>🌶️ {spiceLabel}<br /></>}
-                      {item.extras?.length > 0 && <>➕ {item.extras.map(eid => EXTRAS.find(e => e.id === eid)?.label).join("، ")}<br /></>}
-                      {item.removals?.length > 0 && <>➖ {item.removals.map(rid => REMOVALS.find(r => r.id === rid)?.label).join("، ")}<br /></>}
-                      {drinkObj && <>🥤 {drinkObj.name}<br /></>}
-                      {item.notes && <>📝 {item.notes}</>}
-                    </div>
-                  )}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-                    <div style={{ color: "#D4A017", fontSize: 17, fontWeight: 900 }}>{t} {CONFIG.currency}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <RoundBtn onClick={() => changeQty(item.cartId, -1)} color="#C0392B" label="−" />
-                      <span style={{ color: "#fff", fontSize: 18, fontWeight: 900, minWidth: 22, textAlign: "center" }}>{item.qty}</span>
-                      <RoundBtn onClick={() => changeQty(item.cartId, 1)} color="#2E7D32" label="+" />
-                    </div>
+                  <div style={{ marginTop: 8, background: "#C0392B", borderRadius: 8, padding: "5px 0", color: "#fff", fontSize: 11, fontFamily: "'Cairo', sans-serif", fontWeight: 700 }}>
+                    + اختر وخصص
                   </div>
-                </div>
-              );
-            })}
-            <div style={{ background: "linear-gradient(135deg,#1a1200,#2a1e00)", border: "2px solid #D4A017", borderRadius: 16, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ color: "#D4A017", fontSize: 22, fontWeight: 900 }}>{cartTotal} {CONFIG.currency}</div>
-              <div style={{ color: "#eee", fontSize: 16, fontWeight: 700 }}>💰 الإجمالي</div>
-            </div>
-          </div>
-        )}
-
-        {cart.length > 0 && (
-          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "14px 16px", background: "rgba(15,15,26,.97)", borderTop: "1px solid rgba(212,160,23,.2)" }}>
-            {orderSent
-              ? <div style={{ textAlign: "center", color: "#A5D6A7", fontSize: 16, fontWeight: 700, padding: 14 }}>✅ تم إرسال الطلب! شكراً لك 🦌</div>
-              : <button onClick={sendOrder} style={{ width: "100%", background: "linear-gradient(135deg,#25D366,#128C7E)", border: "none", borderRadius: 14, padding: "16px", color: "#fff", fontFamily: "'Cairo',sans-serif", fontSize: 16, fontWeight: 900, cursor: "pointer", boxShadow: "0 4px 20px rgba(37,211,102,.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-                  <span style={{ fontSize: 22 }}>📲</span>
-                  إرسال الطلب عبر واتساب — {cartTotal} {CONFIG.currency}
-                </button>}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (page === "admin") {
-    if (!adminUnlocked) return (
-      <div style={{ minHeight: "100vh", background: "#0f0f1a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, direction: "rtl", fontFamily: "'Cairo',sans-serif" }}>
-        <GlobalStyle />
-        <GazalaLogo size={64} />
-        <h2 style={{ color: "#D4A017", marginTop: 16, marginBottom: 24 }}>لوحة تحكم غزالة</h2>
-        <input type="password" value={adminPass} onChange={e => setAdminPass(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") adminPass === "1234" ? setAdminUnlocked(true) : notify("كلمة مرور خاطئة", "error"); }}
-          placeholder="كلمة المرور"
-          style={{ background: "rgba(255,255,255,.08)", border: "1px solid rgba(212,160,23,.4)", borderRadius: 12, padding: "12px 16px", color: "#fff", fontFamily: "'Cairo',sans-serif", fontSize: 15, width: "100%", maxWidth: 300, direction: "rtl", marginBottom: 12, outline: "none" }} />
-        <button onClick={() => adminPass === "1234" ? setAdminUnlocked(true) : notify("كلمة مرور خاطئة", "error")}
-          style={{ background: "#D4A017", border: "none", borderRadius: 14, padding: "12px 32px", color: "#0f0f1a", fontFamily: "'Cairo',sans-serif", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>دخول</button>
-        <p style={{ color: "#555", fontSize: 11, marginTop: 12 }}>كلمة المرور الافتراضية: 1234</p>
-        <button onClick={() => setPage("menu")} style={{ marginTop: 8, background: "transparent", border: "none", color: "#888", fontFamily: "'Cairo',sans-serif", cursor: "pointer", fontSize: 14 }}>← رجوع للقائمة</button>
-        <Toast n={notification} />
-      </div>
-    );
-
-    return (
-      <div style={{ minHeight: "100vh", background: "#0f0f1a", direction: "rtl", fontFamily: "'Cairo',sans-serif", paddingBottom: 40 }}>
-        <GlobalStyle />
-        <div style={{ background: "linear-gradient(135deg,#0d2b0d,#1a4a1a)", padding: "16px", borderBottom: "2px solid #2E7D32", display: "flex", alignItems: "center", gap: 12 }}>
-          <BackBtn onClick={() => setPage("menu")} />
-          <div style={{ flex: 1, textAlign: "right", color: "#90EE90", fontSize: 18, fontWeight: 900 }}>⚙️ لوحة التحكم</div>
-          <GazalaLogo size={36} />
-        </div>
-        <div style={{ padding: 16 }}>
-          <div style={{ background: "rgba(46,125,50,.1)", border: "1px solid #2E7D32", borderRadius: 12, padding: 16, textAlign: "center", marginBottom: 20 }}>
-            <div style={{ color: "#25D366", fontSize: 28 }}>📲</div>
-            <div style={{ color: "#eee", fontSize: 16, fontWeight: 800, marginTop: 6 }}>+{CONFIG.whatsapp}</div>
-            <div style={{ color: "#888", fontSize: 12, marginTop: 4 }}>🦌 @{CONFIG.instagram}</div>
-          </div>
-          {CATEGORIES.map(cat => (
-            <div key={cat.id} style={{ marginBottom: 20 }}>
-              <h3 style={{ color: "#D4A017", fontSize: 15, fontWeight: 800, textAlign: "right", borderRight: "3px solid #D4A017", paddingRight: 10, marginBottom: 10 }}>{cat.emoji} {cat.name}</h3>
-              {cat.items.map(item => (
-                <div key={item.id} style={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,.08)", borderRadius: 12, padding: "10px 12px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
-                  <input type="number" defaultValue={item.price} style={{ width: 60, background: "rgba(212,160,23,.1)", border: "1px solid rgba(212,160,23,.4)", borderRadius: 8, padding: "6px", color: "#D4A017", fontFamily: "'Cairo',sans-serif", fontSize: 14, textAlign: "center", outline: "none" }} />
-                  <div style={{ flex: 1, color: "#ccc", fontSize: 14, textAlign: "right" }}>{item.emoji} {item.name}</div>
-                </div>
+                </button>
               ))}
             </div>
+          </div>
+        ))}
+
+        {/* المشروبات - قابلة للطلب مباشرة */}
+        <h2 style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 17, fontWeight: 800, marginBottom: 12, textAlign: "right", background: "#0a2a4a88", padding: "8px 14px", borderRadius: 10, borderRight: "4px solid #FFD700" }}>
+          ❄️ مشروبات باردة
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 20 }}>
+          {menu.coldDrinks.map((d) => (
+            <button key={d.id} onClick={() => openDrinkOrder(d)} style={{ background: "linear-gradient(135deg, #0a1628, #0d1f3c)", border: "1px solid rgba(255,215,0,0.2)", borderRadius: 12, padding: "10px 6px", textAlign: "center", cursor: "pointer" }}
+              onTouchStart={e => e.currentTarget.style.opacity = "0.7"} onTouchEnd={e => e.currentTarget.style.opacity = "1"}>
+              <div style={{ fontSize: 24 }}>{d.emoji}</div>
+              <div style={{ color: "#B8D4FF", fontFamily: "'Cairo', sans-serif", fontSize: 11, fontWeight: 600, marginTop: 3 }}>{d.name}</div>
+              <div style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 12, fontWeight: 800 }}>{d.price} {config.currency}</div>
+              <div style={{ marginTop: 5, background: "#1a3a6a", borderRadius: 6, padding: "3px 0", color: "#90c0ff", fontSize: 10, fontFamily: "'Cairo', sans-serif" }}>+ أضف للطلب</div>
+            </button>
           ))}
         </div>
-        <Toast n={notification} />
+
+        <h2 style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 17, fontWeight: 800, marginBottom: 12, textAlign: "right", background: "#3a1a0088", padding: "8px 14px", borderRadius: 10, borderRight: "4px solid #FFD700" }}>
+          ☕ مشروبات ساخنة
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 40 }}>
+          {menu.hotDrinks.map((d) => (
+            <button key={d.id} onClick={() => openDrinkOrder(d)} style={{ background: "linear-gradient(135deg, #2a1000, #3a1800)", border: "1px solid rgba(255,215,0,0.2)", borderRadius: 12, padding: "10px 6px", textAlign: "center", cursor: "pointer" }}
+              onTouchStart={e => e.currentTarget.style.opacity = "0.7"} onTouchEnd={e => e.currentTarget.style.opacity = "1"}>
+              <div style={{ fontSize: 24 }}>{d.emoji}</div>
+              <div style={{ color: "#FFE4B5", fontFamily: "'Cairo', sans-serif", fontSize: 11, fontWeight: 600, marginTop: 3 }}>{d.name}</div>
+              <div style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 12, fontWeight: 800 }}>{d.price} {config.currency}</div>
+              <div style={{ marginTop: 5, background: "#3a1a00", borderRadius: 6, padding: "3px 0", color: "#ffb870", fontSize: 10, fontFamily: "'Cairo', sans-serif" }}>+ أضف للطلب</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* زر السلة العائم */}
+      {cart.length > 0 && (
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 100, width: "calc(100% - 40px)", maxWidth: 400 }}>
+          <button onClick={() => setPage("cart")} style={{
+            width: "100%", background: "linear-gradient(135deg, #FFD700, #FFA500)",
+            border: "none", borderRadius: 16, padding: "16px 24px", color: "#1a0a00",
+            fontFamily: "'Cairo', sans-serif", fontSize: 16, fontWeight: 900,
+            cursor: "pointer", boxShadow: "0 6px 24px rgba(255,165,0,0.5)",
+            display: "flex", justifyContent: "space-between", alignItems: "center"
+          }}>
+            <span>🛒 عرض السلة ({cart.length})</span>
+            <span>{total} {config.currency}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  // ---- صفحة التخصيص ----
+  const CustomizePage = () => {
+    const [local, setLocal] = useState(customizing);
+    const itemTotal = local ? calcItemTotal(local, menu) : 0;
+
+    const toggle = (field, val) => {
+      setLocal((prev) => ({
+        ...prev,
+        [field]: prev[field].includes(val)
+          ? prev[field].filter((v) => v !== val)
+          : [...prev[field], val],
+      }));
+    };
+
+    if (!local) return null;
+
+    const Section = ({ title, children }) => (
+      <div style={{ marginBottom: 20 }}>
+        <h3 style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 15, fontWeight: 700, marginBottom: 10, textAlign: "right", borderRight: "3px solid #C0392B", paddingRight: 10 }}>
+          {title}
+        </h3>
+        {children}
       </div>
     );
-  }
 
-  return null;
-}
-
-function CustomizePage({ initial, onBack, onAdd }) {
-  const [item, setItem] = useState({ ...initial });
-  const total = calcItemTotal(item);
-
-  const toggleArr = (field, val) =>
-    setItem(p => ({ ...p, [field]: p[field].includes(val) ? p[field].filter(v => v !== val) : [...p[field], val] }));
-
-  return (
-    <div style={{ minHeight: "100vh", background: "#0f0f1a", direction: "rtl", paddingBottom: 100, fontFamily: "'Cairo',sans-serif" }}>
-      <GlobalStyle />
-      <div style={{ background: item.catColor || "#8B1A1A", padding: "16px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10 }}>
-        <BackBtn onClick={onBack} />
-        <div style={{ flex: 1, textAlign: "right" }}>
-          <div style={{ color: "#fff", fontSize: 18, fontWeight: 900 }}>{item.emoji} {item.name}</div>
-          <div style={{ color: "rgba(255,255,255,.7)", fontSize: 12 }}>خصّص طلبك كما تريد</div>
-        </div>
+    const ChipGroup = ({ options, selected, onSelect, multi = false, colorActive = "#C0392B" }) => (
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
+        {options.map((o) => {
+          const active = multi ? selected.includes(o.id) : selected === o.id;
+          return (
+            <button key={String(o.id)} onClick={() => multi ? toggle(multi, o.id) : onSelect(o.id)}
+              style={{
+                background: active ? colorActive : "rgba(255,255,255,0.08)",
+                border: `1px solid ${active ? colorActive : "rgba(255,255,255,0.2)"}`,
+                borderRadius: 24, padding: "7px 14px", color: active ? "#fff" : "#ddd",
+                fontFamily: "'Cairo', sans-serif", fontSize: 12, fontWeight: active ? 700 : 400,
+                cursor: "pointer", transition: "all 0.15s"
+              }}>
+              {o.emoji || ""} {o.label || o.name} {o.priceAdd > 0 ? `+${o.priceAdd}` : o.price > 0 && multi === false ? ` — ${o.price}` : ""}
+            </button>
+          );
+        })}
       </div>
+    );
 
-      <div style={{ padding: 16 }}>
-        <Sec title="🌶️ درجة الحدة">
-          <ChipRow>{SPICE.map(s => <Chip key={s.id} label={`${s.emoji} ${s.label}`} active={item.spice === s.id} onClick={() => setItem(p => ({ ...p, spice: s.id }))} color="#8B1A1A" />)}</ChipRow>
-        </Sec>
-
-        <Sec title="➕ الإضافات">
-          <ChipRow>{EXTRAS.map(e => <Chip key={e.id} label={`${e.emoji} ${e.label} (+${e.priceAdd})`} active={item.extras.includes(e.id)} onClick={() => toggleArr("extras", e.id)} color="#2E7D32" />)}</ChipRow>
-        </Sec>
-
-        <Sec title="➖ حذف مكونات">
-          <ChipRow>{REMOVALS.map(r => <Chip key={r.id} label={r.label} active={item.removals.includes(r.id)} onClick={() => toggleArr("removals", r.id)} color="#B71C1C" />)}</ChipRow>
-        </Sec>
-
-        <Sec title="🥤 أضف مشروب (اختياري)">
-          <ChipRow>
-            <Chip label="بدون مشروب" active={!item.drink} onClick={() => setItem(p => ({ ...p, drink: null }))} color="#555" />
-            {ALL_DRINKS.map(d => <Chip key={d.id} label={`${d.emoji} ${d.name} (${d.price})`} active={item.drink === d.id} onClick={() => setItem(p => ({ ...p, drink: d.id }))} color="#0d3b2e" />)}
-          </ChipRow>
-        </Sec>
-
-        <Sec title="📝 ملاحظات">
-          <textarea value={item.notes} onChange={e => setItem(p => ({ ...p, notes: e.target.value }))} placeholder="مثال: زيادة صوص، ضغط خفيف..."
-            style={{ width: "100%", background: "rgba(255,255,255,.06)", border: "1px solid rgba(212,160,23,.3)", borderRadius: 12, padding: 12, color: "#fff", fontFamily: "'Cairo',sans-serif", fontSize: 13, resize: "none", direction: "rtl", minHeight: 70, outline: "none" }} />
-        </Sec>
-
-        <Sec title="🔢 الكمية">
-          <div style={{ display: "flex", alignItems: "center", gap: 20, justifyContent: "flex-end" }}>
-            <RoundBtn onClick={() => setItem(p => ({ ...p, qty: Math.max(1, p.qty - 1) }))} color="#C0392B" label="−" size={44} />
-            <span style={{ color: "#D4A017", fontSize: 24, fontWeight: 900, minWidth: 30, textAlign: "center" }}>{item.qty}</span>
-            <RoundBtn onClick={() => setItem(p => ({ ...p, qty: p.qty + 1 }))} color="#2E7D32" label="+" size={44} />
+    return (
+      <div style={{ minHeight: "100vh", background: "#1a0a00", paddingBottom: 100 }}>
+        {/* رأس الصفحة */}
+        <div style={{ background: "linear-gradient(180deg, #8B0000, #C0392B)", padding: "18px 16px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10 }}>
+          <button onClick={() => setPage("menu")} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 10, padding: "8px 12px", color: "#fff", fontSize: 14, cursor: "pointer" }}>
+            ← رجوع
+          </button>
+          <div style={{ flex: 1, textAlign: "right" }}>
+            <div style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 18, fontWeight: 800 }}>
+              {local.emoji} {local.sandwichName}
+            </div>
+            <div style={{ color: "#FFEAA7", fontFamily: "'Cairo', sans-serif", fontSize: 12 }}>خصّص طلبك</div>
           </div>
-        </Sec>
-      </div>
+        </div>
 
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "14px 16px", background: "rgba(15,15,26,.97)", borderTop: "1px solid rgba(212,160,23,.2)" }}>
-        <button onClick={() => onAdd({ ...item, cartId: Date.now() })} style={{ width: "100%", background: "linear-gradient(135deg,#D4A017,#C0392B)", border: "none", borderRadius: 14, padding: "16px", color: "#fff", fontFamily: "'Cairo',sans-serif", fontSize: 16, fontWeight: 900, cursor: "pointer", boxShadow: "0 4px 20px rgba(212,160,23,.3)" }}>
-          🛒 أضف للسلة — {total} {CONFIG.currency}
+        <div style={{ padding: "20px 16px" }}>
+          {!local.isDrink && (
+            <>
+              <Section title="🌶️ درجة الحرارة">
+                <ChipGroup options={menu.spice} selected={local.spice} onSelect={(v) => setLocal({ ...local, spice: v })} />
+              </Section>
+
+              <Section title="➕ الإضافات">
+                <ChipGroup options={menu.extras} selected={local.extras} onSelect={() => {}} multi="extras" colorActive="#2E7D32" />
+              </Section>
+
+              <Section title="➖ حذف مكونات">
+                <ChipGroup options={menu.removals} selected={local.removals} onSelect={() => {}} multi="removals" colorActive="#B71C1C" />
+              </Section>
+
+              <Section title="🥤 أضف مشروب مع الطلب">
+                <ChipGroup
+                  options={[{ id: null, label: "بدون مشروب", price: 0 }, ...menu.drinks]}
+                  selected={local.drink}
+                  onSelect={(v) => setLocal({ ...local, drink: v })}
+                />
+              </Section>
+            </>
+          )}
+
+          <Section title="📝 ملاحظات خاصة">
+            <textarea
+              value={local.notes}
+              onChange={(e) => setLocal({ ...local, notes: e.target.value })}
+              placeholder="مثال: سكر خفيف، بدون ثلج..."
+              style={{
+                width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,215,0,0.3)",
+                borderRadius: 12, padding: 12, color: "#fff", fontFamily: "'Cairo', sans-serif",
+                fontSize: 13, resize: "none", boxSizing: "border-box", direction: "rtl", minHeight: 80
+              }}
+            />
+          </Section>
+
+          <Section title="🔢 الكمية">
+            <div style={{ display: "flex", alignItems: "center", gap: 16, justifyContent: "flex-end" }}>
+              <button onClick={() => setLocal(prev => ({ ...prev, qty: Math.max(1, prev.qty - 1) }))}
+                style={{ width: 40, height: 40, borderRadius: "50%", background: "#C0392B", border: "none", color: "#fff", fontSize: 22, cursor: "pointer", fontWeight: 900 }}>−</button>
+              <span style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 22, fontWeight: 900, minWidth: 30, textAlign: "center" }}>{local.qty}</span>
+              <button onClick={() => setLocal(prev => ({ ...prev, qty: prev.qty + 1 }))}
+                style={{ width: 40, height: 40, borderRadius: "50%", background: "#2E7D32", border: "none", color: "#fff", fontSize: 22, cursor: "pointer", fontWeight: 900 }}>+</button>
+            </div>
+          </Section>
+        </div>
+
+        {/* زر الإضافة */}
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "16px", background: "rgba(26,10,0,0.97)", borderTop: "1px solid rgba(255,215,0,0.2)" }}>
+          <button onClick={() => addToCart(local)} style={{
+            width: "100%", background: "linear-gradient(135deg, #FFD700, #FFA500)",
+            border: "none", borderRadius: 14, padding: "16px", color: "#1a0a00",
+            fontFamily: "'Cairo', sans-serif", fontSize: 16, fontWeight: 900, cursor: "pointer",
+            boxShadow: "0 4px 20px rgba(255,165,0,0.4)"
+          }}>
+            🛒 أضف للسلة — {calcItemTotal(local, menu)} {config.currency}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // ---- صفحة السلة ----
+  const CartPage = () => (
+    <div style={{ minHeight: "100vh", background: "#1a0a00", paddingBottom: 120 }}>
+      <div style={{ background: "linear-gradient(180deg, #8B0000, #C0392B)", padding: "18px 16px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10 }}>
+        <button onClick={() => setPage("menu")} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 10, padding: "8px 12px", color: "#fff", fontSize: 14, cursor: "pointer" }}>
+          ← رجوع
         </button>
-      </div>
-    </div>
-  );
-}
-
-function DrinkOrderPage({ initial, onBack, onAdd }) {
-  const [item, setItem] = useState({ ...initial });
-  const total = calcItemTotal(item);
-
-  return (
-    <div style={{ minHeight: "100vh", background: "#0f0f1a", direction: "rtl", fontFamily: "'Cairo',sans-serif" }}>
-      <GlobalStyle />
-      <div style={{ background: "#0d3b2e", padding: "16px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10 }}>
-        <BackBtn onClick={onBack} />
-        <div style={{ flex: 1, textAlign: "right" }}>
-          <div style={{ color: "#fff", fontSize: 18, fontWeight: 900 }}>{item.emoji} {item.name}</div>
-          <div style={{ color: "rgba(255,255,255,.7)", fontSize: 12 }}>اختر الكمية</div>
+        <div style={{ flex: 1, textAlign: "right", color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 18, fontWeight: 800 }}>
+          🛒 سلة الطلبات
         </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 30 }}>
-        <div style={{ fontSize: 80 }}>{item.emoji}</div>
-        <div style={{ color: "#fff", fontSize: 22, fontWeight: 900 }}>{item.name}</div>
-        <div style={{ color: "#D4A017", fontSize: 28, fontWeight: 900 }}>{item.price} {CONFIG.currency}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <RoundBtn onClick={() => setItem(p => ({ ...p, qty: Math.max(1, p.qty - 1) }))} color="#C0392B" label="−" size={52} />
-          <span style={{ color: "#D4A017", fontSize: 32, fontWeight: 900, minWidth: 40, textAlign: "center" }}>{item.qty}</span>
-          <RoundBtn onClick={() => setItem(p => ({ ...p, qty: p.qty + 1 }))} color="#2E7D32" label="+" size={52} />
+      {cart.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "60px 20px" }}>
+          <div style={{ fontSize: 64, marginBottom: 16 }}>🛒</div>
+          <div style={{ color: "#888", fontFamily: "'Cairo', sans-serif", fontSize: 16 }}>السلة فارغة</div>
+          <button onClick={() => setPage("menu")} style={{
+            marginTop: 20, background: "#C0392B", border: "none", borderRadius: 14,
+            padding: "12px 32px", color: "#fff", fontFamily: "'Cairo', sans-serif",
+            fontSize: 15, fontWeight: 700, cursor: "pointer"
+          }}>ابدأ الطلب</button>
         </div>
-        <div style={{ color: "#aaa", fontSize: 14 }}>الإجمالي: <strong style={{ color: "#D4A017" }}>{total} {CONFIG.currency}</strong></div>
-      </div>
+      ) : (
+        <div style={{ padding: "16px" }}>
+          {cart.map((item) => {
+            const spiceLabel = menu.spice.find((s) => s.id === item.spice)?.label;
+            const drinkName = item.drink ? menu.drinks.find((d) => d.id === item.drink)?.name : null;
+            const itemT = calcItemTotal(item, menu);
 
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "14px 16px", background: "rgba(15,15,26,.97)", borderTop: "1px solid rgba(212,160,23,.2)" }}>
-        <button onClick={() => onAdd({ ...item, cartId: Date.now() })} style={{ width: "100%", background: "linear-gradient(135deg,#0d3b2e,#1a6040)", border: "none", borderRadius: 14, padding: "16px", color: "#fff", fontFamily: "'Cairo',sans-serif", fontSize: 16, fontWeight: 900, cursor: "pointer" }}>
-          🛒 أضف للسلة — {total} {CONFIG.currency}
-        </button>
-      </div>
+            return (
+              <div key={item.id} style={{
+                background: "linear-gradient(135deg, #2d1a00, #3d2200)",
+                border: "1px solid rgba(255,215,0,0.2)",
+                borderRadius: 16, padding: 16, marginBottom: 12
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                  <button onClick={() => removeFromCart(item.id)} style={{ background: "rgba(192,57,43,0.3)", border: "none", borderRadius: 8, padding: "4px 10px", color: "#E57373", cursor: "pointer", fontSize: 12, fontFamily: "'Cairo', sans-serif" }}>
+                    🗑️ حذف
+                  </button>
+                  <div style={{ color: "#FFE4B5", fontFamily: "'Cairo', sans-serif", fontSize: 16, fontWeight: 800 }}>
+                    {item.emoji} {item.sandwichName}
+                  </div>
+                </div>
+                <div style={{ color: "#aaa", fontFamily: "'Cairo', sans-serif", fontSize: 12, lineHeight: 1.8, textAlign: "right" }}>
+                  {!item.isDrink && spiceLabel && <span>🌶️ {spiceLabel}</span>}
+                  {!item.isDrink && item.extras && item.extras.length > 0 && <><br />➕ {item.extras.map((eid) => menu.extras.find((e) => e.id === eid)?.label).filter(Boolean).join("، ")}</>}
+                  {!item.isDrink && item.removals && item.removals.length > 0 && <><br />➖ {item.removals.map((rid) => menu.removals.find((r) => r.id === rid)?.label).filter(Boolean).join("، ")}</>}
+                  {!item.isDrink && drinkName && <><br />🥤 مع: {drinkName}</>}
+                  {item.notes && <><br />📝 {item.notes}</>}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+                  <div style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 16, fontWeight: 900 }}>
+                    {itemT} {config.currency}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <button onClick={() => changeQty(item.id, -1)} style={{ width: 34, height: 34, borderRadius: "50%", background: "#C0392B", border: "none", color: "#fff", fontSize: 18, cursor: "pointer" }}>−</button>
+                    <span style={{ color: "#fff", fontFamily: "'Cairo', sans-serif", fontSize: 18, fontWeight: 800, minWidth: 20, textAlign: "center" }}>{item.qty}</span>
+                    <button onClick={() => changeQty(item.id, 1)} style={{ width: 34, height: 34, borderRadius: "50%", background: "#2E7D32", border: "none", color: "#fff", fontSize: 18, cursor: "pointer" }}>+</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* الإجمالي */}
+          <div style={{
+            background: "linear-gradient(135deg, #0d1f3c, #0a1628)",
+            border: "1px solid rgba(255,215,0,0.4)",
+            borderRadius: 16, padding: "16px 20px",
+            display: "flex", justifyContent: "space-between", alignItems: "center"
+          }}>
+            <div style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 20, fontWeight: 900 }}>
+              {total} {config.currency}
+            </div>
+            <div style={{ color: "#B8D4FF", fontFamily: "'Cairo', sans-serif", fontSize: 16, fontWeight: 700 }}>
+              💰 الإجمالي
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* زر الإرسال */}
+      {cart.length > 0 && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "16px", background: "rgba(26,10,0,0.97)", borderTop: "1px solid rgba(255,215,0,0.2)" }}>
+          {orderSent ? (
+            <div style={{ textAlign: "center", color: "#A5D6A7", fontFamily: "'Cairo', sans-serif", fontSize: 16, fontWeight: 700 }}>
+              ✅ تم إرسال الطلب! شكراً لك 🎉
+            </div>
+          ) : (
+            <button onClick={sendOrder} style={{
+              width: "100%", background: "linear-gradient(135deg, #25D366, #128C7E)",
+              border: "none", borderRadius: 14, padding: "16px", color: "#fff",
+              fontFamily: "'Cairo', sans-serif", fontSize: 16, fontWeight: 900, cursor: "pointer",
+              boxShadow: "0 4px 20px rgba(37,211,102,0.4)",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10
+            }}>
+              <span style={{ fontSize: 20 }}>📲</span>
+              إرسال الطلب عبر واتساب — {total} {config.currency}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
-}
 
-function GlobalStyle() {
-  return <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { margin: 0; direction: rtl; background: #0f0f1a; }
-    ::-webkit-scrollbar { display: none; }
-  `}</style>;
-}
+  // ---- لوحة التحكم ----
+  const AdminPage = () => {
+    const [tab, setTab] = useState("sandwiches");
+    const [editConfig, setEditConfig] = useState({ ...config });
+    const [newSandwich, setNewSandwich] = useState({ name: "", basePrice: "", emoji: "🥙" });
 
-function SectionTitle({ emoji, title }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid rgba(212,160,23,.2)", marginTop: 8 }}>
-      <span style={{ fontSize: 20 }}>{emoji}</span>
-      <h2 style={{ color: "#D4A017", fontSize: 17, fontWeight: 800, margin: 0, fontFamily: "'Cairo',sans-serif" }}>{title}</h2>
-    </div>
-  );
-}
+    if (!adminUnlocked) {
+      return (
+        <div style={{ minHeight: "100vh", background: "#1a0a00", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔐</div>
+          <h2 style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", marginBottom: 20 }}>لوحة التحكم</h2>
+          <input type="password" value={adminPass} onChange={e => setAdminPass(e.target.value)}
+            placeholder="كلمة المرور"
+            style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,215,0,0.4)", borderRadius: 12, padding: "12px 16px", color: "#fff", fontFamily: "'Cairo', sans-serif", fontSize: 15, width: "100%", maxWidth: 300, direction: "rtl", marginBottom: 12, boxSizing: "border-box" }} />
+          <button onClick={() => { if (adminPass === "1234") setAdminUnlocked(true); else notify("كلمة مرور خاطئة", "error"); }}
+            style={{ background: "#C0392B", border: "none", borderRadius: 14, padding: "12px 32px", color: "#fff", fontFamily: "'Cairo', sans-serif", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+            دخول
+          </button>
+          <p style={{ color: "#888", fontFamily: "'Cairo', sans-serif", fontSize: 11, marginTop: 12 }}>كلمة المرور الافتراضية: 1234</p>
+          <button onClick={() => setPage("menu")} style={{ marginTop: 12, background: "transparent", border: "none", color: "#aaa", fontFamily: "'Cairo', sans-serif", cursor: "pointer" }}>← رجوع للقائمة</button>
+        </div>
+      );
+    }
 
-function ItemRow({ item, onPress }) {
-  return (
-    <div onClick={onPress} style={{
-      background: "linear-gradient(135deg,#1a1a2e,#16213e)",
-      border: `1px solid ${item.popular ? "#D4A017" : "rgba(255,255,255,.08)"}`,
-      borderRadius: 14, padding: "14px 16px",
-      display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
-      boxShadow: item.popular ? "0 2px 12px rgba(212,160,23,.12)" : "none",
-    }}>
-      <span style={{ fontSize: 28 }}>{item.emoji}</span>
-      <div style={{ flex: 1 }}>
-        <div style={{ color: "#eee", fontSize: 15, fontWeight: 700, fontFamily: "'Cairo',sans-serif" }}>{item.name}</div>
-        {item.popular && <div style={{ color: "#D4A017", fontSize: 10, marginTop: 2 }}>⭐ الأكثر طلباً</div>}
+    return (
+      <div style={{ minHeight: "100vh", background: "#1a0a00", paddingBottom: 40 }}>
+        <div style={{ background: "linear-gradient(180deg, #1a3a1a, #2d5a2d)", padding: "18px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={() => setPage("menu")} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 10, padding: "8px 12px", color: "#fff", fontSize: 14, cursor: "pointer" }}>← رجوع</button>
+          <div style={{ flex: 1, textAlign: "right", color: "#90EE90", fontFamily: "'Cairo', sans-serif", fontSize: 18, fontWeight: 800 }}>⚙️ لوحة التحكم</div>
+        </div>
+
+        {/* تبويبات */}
+        <div style={{ display: "flex", gap: 0, background: "#0d0500", overflowX: "auto" }}>
+          {["sandwiches", "drinks", "settings"].map((t) => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              flex: 1, padding: "12px 8px", border: "none", cursor: "pointer",
+              background: tab === t ? "#2d5a2d" : "transparent",
+              color: tab === t ? "#90EE90" : "#888",
+              fontFamily: "'Cairo', sans-serif", fontSize: 12, fontWeight: tab === t ? 700 : 400,
+              borderBottom: tab === t ? "2px solid #90EE90" : "2px solid transparent"
+            }}>
+              {t === "sandwiches" ? "🥙 السندوتشات" : t === "drinks" ? "🥤 المشروبات" : "⚙️ الإعدادات"}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ padding: "16px" }}>
+          {tab === "sandwiches" && (
+            <>
+              <h3 style={{ color: "#90EE90", fontFamily: "'Cairo', sans-serif", textAlign: "right", marginBottom: 12 }}>إدارة الأصناف</h3>
+              {[
+                { key: "shabatySamoli", label: "شباتي / صامولي" },
+                { key: "shabatyHali", label: "شباتي / حالي" },
+                { key: "shawarma", label: "شاورما / برقر" },
+                { key: "soHon", label: "صحون" },
+                { key: "boxes", label: "بوكسات غزالة" },
+              ].map(({ key, label }) => (
+                <div key={key} style={{ marginBottom: 16 }}>
+                  <div style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 13, fontWeight: 700, textAlign: "right", marginBottom: 6, borderRight: "3px solid #90EE90", paddingRight: 8 }}>{label}</div>
+                  {(menu[key] || []).map((s) => (
+                    <div key={s.id} style={{ background: "#2d1a00", border: "1px solid rgba(144,238,144,0.2)", borderRadius: 10, padding: 10, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
+                      <input type="number" value={s.basePrice}
+                        onChange={(e) => setMenu((prev) => ({ ...prev, [key]: prev[key].map((x) => x.id === s.id ? { ...x, basePrice: +e.target.value } : x) }))}
+                        style={{ width: 55, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, padding: "5px 6px", color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 13, textAlign: "center" }} />
+                      <div style={{ flex: 1, color: "#FFE4B5", fontFamily: "'Cairo', sans-serif", fontSize: 13, textAlign: "right" }}>{s.emoji} {s.name}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </>
+          )}
+
+          {tab === "drinks" && (
+            <>
+              <h3 style={{ color: "#90EE90", fontFamily: "'Cairo', sans-serif", textAlign: "right", marginBottom: 12 }}>إدارة المشروبات</h3>
+              {[
+                { key: "coldDrinks", label: "❄️ باردة" },
+                { key: "hotDrinks", label: "☕ ساخنة" },
+              ].map(({ key, label }) => (
+                <div key={key} style={{ marginBottom: 16 }}>
+                  <div style={{ color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 13, fontWeight: 700, textAlign: "right", marginBottom: 6, borderRight: "3px solid #90EE90", paddingRight: 8 }}>{label}</div>
+                  {(menu[key] || []).map((d) => (
+                    <div key={d.id} style={{ background: "#0d1f3c", border: "1px solid rgba(144,238,144,0.2)", borderRadius: 10, padding: 10, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
+                      <input type="number" value={d.price}
+                        onChange={(e) => setMenu((prev) => ({ ...prev, [key]: prev[key].map((x) => x.id === d.id ? { ...x, price: +e.target.value } : x) }))}
+                        style={{ width: 55, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, padding: "5px 6px", color: "#FFD700", fontFamily: "'Cairo', sans-serif", fontSize: 13, textAlign: "center" }} />
+                      <div style={{ flex: 1, color: "#B8D4FF", fontFamily: "'Cairo', sans-serif", fontSize: 13, textAlign: "right" }}>{d.emoji} {d.name}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </>
+          )}
+
+          {tab === "settings" && (
+            <>
+              <h3 style={{ color: "#90EE90", fontFamily: "'Cairo', sans-serif", textAlign: "right", marginBottom: 12 }}>إعدادات المطعم</h3>
+              {[
+                { key: "name", label: "اسم المطعم" },
+                { key: "slogan", label: "الشعار" },
+                { key: "logo", label: "الإيموجي" },
+                { key: "whatsapp", label: "رقم واتساب (مع رمز الدولة)" },
+                { key: "currency", label: "العملة" },
+              ].map(({ key, label }) => (
+                <div key={key} style={{ marginBottom: 12 }}>
+                  <label style={{ color: "#888", fontFamily: "'Cairo', sans-serif", fontSize: 12, display: "block", textAlign: "right", marginBottom: 4 }}>{label}</label>
+                  <input value={editConfig[key]} onChange={e => setEditConfig({ ...editConfig, [key]: e.target.value })}
+                    style={{ width: "100%", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 10, padding: "10px 14px", color: "#fff", fontFamily: "'Cairo', sans-serif", fontSize: 14, direction: "rtl", boxSizing: "border-box" }} />
+                </div>
+              ))}
+              <button onClick={() => { setConfig(editConfig); notify("تم حفظ الإعدادات ✅"); }}
+                style={{ width: "100%", background: "#2E7D32", border: "none", borderRadius: 12, padding: "14px", color: "#fff", fontFamily: "'Cairo', sans-serif", fontSize: 15, fontWeight: 700, cursor: "pointer", marginTop: 8 }}>
+                💾 حفظ الإعدادات
+              </button>
+            </>
+          )}
+        </div>
       </div>
-      <div style={{ textAlign: "left" }}>
-        <div style={{ color: "#D4A017", fontSize: 16, fontWeight: 900, fontFamily: "'Cairo',sans-serif" }}>{item.price}</div>
-        <div style={{ color: "#666", fontSize: 10, fontFamily: "'Cairo',sans-serif" }}>{CONFIG.currency}</div>
-      </div>
-      <div style={{ background: "#C0392B", borderRadius: 10, padding: "6px 10px", color: "#fff", fontSize: 18, fontWeight: 900 }}>+</div>
-    </div>
-  );
-}
+    );
+  };
 
-function Sec({ title, children }) {
   return (
-    <div style={{ marginBottom: 22 }}>
-      <h3 style={{ color: "#D4A017", fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 10, textAlign: "right", borderRight: "3px solid #C0392B", paddingRight: 10 }}>{title}</h3>
-      {children}
-    </div>
-  );
-}
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; direction: rtl; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.3); border-radius: 4px; }
+      `}</style>
 
-function ChipRow({ children }) {
-  return <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>{children}</div>;
-}
+      {/* إشعار */}
+      {notification && (
+        <div style={{
+          position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
+          background: notification.type === "error" ? "#C0392B" : "#2E7D32",
+          color: "#fff", fontFamily: "'Cairo', sans-serif", fontSize: 14, fontWeight: 700,
+          padding: "10px 24px", borderRadius: 24, zIndex: 9999,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.4)", whiteSpace: "nowrap"
+        }}>
+          {notification.msg}
+        </div>
+      )}
 
-function BackBtn({ onClick }) {
-  return (
-    <button onClick={onClick} style={{ background: "rgba(0,0,0,.3)", border: "none", borderRadius: 10, padding: "8px 14px", color: "#fff", fontSize: 14, cursor: "pointer", fontFamily: "'Cairo',sans-serif" }}>← رجوع</button>
-  );
-}
-
-function RoundBtn({ onClick, color, label, size = 36 }) {
-  return (
-    <button onClick={onClick} style={{ width: size, height: size, borderRadius: "50%", background: color, border: "none", color: "#fff", fontSize: size * 0.55, cursor: "pointer", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{label}</button>
-  );
-}
-
-function Toast({ n }) {
-  if (!n) return null;
-  return (
-    <div style={{ position: "fixed", top: 80, left: "50%", transform: "translateX(-50%)", background: n.type === "error" ? "#C0392B" : "#1e7e34", color: "#fff", fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, padding: "10px 24px", borderRadius: 24, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,.5)", whiteSpace: "nowrap" }}>{n.msg}</div>
+      {page === "menu" && <MenuPage />}
+      {page === "customize" && <CustomizePage />}
+      {page === "cart" && <CartPage />}
+      {page === "admin" && <AdminPage />}
+    </>
   );
 }
